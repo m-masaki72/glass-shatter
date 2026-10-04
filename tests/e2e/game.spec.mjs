@@ -124,7 +124,8 @@ test('real mouse strike chips glass and retry resets hits', async ({ page }) => 
   await expect.poll(() => page.evaluate(() => window.crystalLab.snapshot().hits)).toBe(0);
 });
 
-test('shape selection and audio preferences survive reload', async ({ page }) => {
+test('shape selection and audio preferences survive a fresh page', async ({ page, context }) => {
+  await page.setViewportSize({ width: 800, height: 600 });
   await openGame(page);
   await page.locator('[data-open-panel="settings"]').click();
   await page.locator('#lab-sound').click();
@@ -132,11 +133,11 @@ test('shape selection and audio preferences survive reload', async ({ page }) =>
   await page.locator('#round-compose').click();
   await page.locator('[data-shape="cascade"]').click();
   await expect.poll(() => page.evaluate(() => window.crystalLab.snapshot().stage.type)).toBe('cascade');
-  await page.reload();
-  await expect
-    .poll(() => page.evaluate(() => window.crystalLab?.snapshot().ready), { timeout: 30000 })
-    .toBe(true);
-  expect(await page.evaluate(() => window.crystalLab.snapshot().stage.type)).toBe('cascade');
-  await page.locator('[data-open-panel="settings"]').click();
-  await expect(page.locator('#lab-sound')).toHaveAttribute('aria-pressed', 'false');
+  await page.close();
+  const reopened = await context.newPage();
+  await reopened.setViewportSize({ width: 800, height: 600 });
+  await openGame(reopened);
+  expect(await reopened.evaluate(() => window.crystalLab.snapshot().stage.type)).toBe('cascade');
+  await reopened.locator('[data-open-panel="settings"]').click();
+  await expect(reopened.locator('#lab-sound')).toHaveAttribute('aria-pressed', 'false');
 });
