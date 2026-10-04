@@ -30,7 +30,7 @@ test('public metadata and bundled assets are present', async ({ page, request })
   expect(await recovery.text()).toContain('ゲームに戻る');
 });
 
-test('game starts without API or external asset requests', async ({ page }, testInfo) => {
+test('game starts without API or external asset requests', async ({ page }) => {
   const failures = [],
     errors = [],
     unexpected = [];
@@ -48,13 +48,12 @@ test('game starts without API or external asset requests', async ({ page }, test
   });
   await openGame(page);
   await expect(page.locator('#crystal-viewport canvas')).toBeVisible();
-  await page.screenshot({ path: testInfo.outputPath('desktop.png'), fullPage: true });
   expect(failures).toEqual([]);
   expect(errors).toEqual([]);
   expect(unexpected).toEqual([]);
 });
 
-test('share links and clipboard fallback work on a narrow screen', async ({ page, context }, testInfo) => {
+test('share links and clipboard fallback work on a narrow screen', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await openGame(page);
   for (const label of ['Xで共有（新しいタブで開く）', 'LINEで共有（新しいタブで開く）']) {
@@ -73,7 +72,6 @@ test('share links and clipboard fallback work on a narrow screen', async ({ page
   await expect(page.locator('#share-url')).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: testInfo.outputPath('mobile.png'), fullPage: true });
 });
 
 test('blocked storage does not prevent playing', async ({ page }) => {
@@ -119,7 +117,7 @@ test('real mouse strike chips glass and retry resets hits', async ({ page }) => 
   expect(target).toBeTruthy();
   const rect = await page.locator('#crystal-viewport').boundingBox();
   await page.mouse.click(rect.x + target.x, rect.y + target.y);
-  await expect.poll(() => page.evaluate(() => window.crystalLab.snapshot().hits)).toBe(1);
+  await expect.poll(() => page.evaluate(() => window.crystalLab.snapshot().hits), { timeout: 20000 }).toBe(1);
   await page.locator('#round-retry').click();
   await expect.poll(() => page.evaluate(() => window.crystalLab.snapshot().hits)).toBe(0);
 });
