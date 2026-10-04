@@ -122,7 +122,7 @@ test('real mouse strike chips glass and retry resets hits', async ({ page }) => 
   await expect.poll(() => page.evaluate(() => window.crystalLab.snapshot().hits)).toBe(0);
 });
 
-test('shape selection and audio preferences survive a fresh page', async ({ page, context }) => {
+test('shape selection and audio preferences are saved', async ({ page }) => {
   await page.setViewportSize({ width: 800, height: 600 });
   await openGame(page);
   await page.locator('[data-open-panel="settings"]').click();
@@ -131,11 +131,28 @@ test('shape selection and audio preferences survive a fresh page', async ({ page
   await page.locator('#round-compose').click();
   await page.locator('[data-shape="cascade"]').click();
   await expect.poll(() => page.evaluate(() => window.crystalLab.snapshot().stage.type)).toBe('cascade');
-  await page.close();
-  const reopened = await context.newPage();
-  await reopened.setViewportSize({ width: 800, height: 600 });
-  await openGame(reopened);
-  expect(await reopened.evaluate(() => window.crystalLab.snapshot().stage.type)).toBe('cascade');
-  await reopened.locator('[data-open-panel="settings"]').click();
-  await expect(reopened.locator('#lab-sound')).toHaveAttribute('aria-pressed', 'false');
+  expect(
+    await page.evaluate(() => JSON.parse(localStorage.getItem('glass-rush.crystal.selection.v1')).prompt),
+  ).toContain('大落下');
+  expect(
+    await page.evaluate(() => JSON.parse(localStorage.getItem('glass-rush.crystal.audio.v1')).enabled),
+  ).toBe(false);
+});
+
+test('saved shape and audio preferences are restored on startup', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 600 });
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'glass-rush.crystal.selection.v1',
+      JSON.stringify({ version: 1, prompt: '透明なガラスの大落下' }),
+    );
+    localStorage.setItem(
+      'glass-rush.crystal.audio.v1',
+      JSON.stringify({ enabled: false, volume: 0.45, musicEnabled: true }),
+    );
+  });
+  await openGame(page);
+  expect(await page.evaluate(() => window.crystalLab.snapshot().stage.type)).toBe('cascade');
+  await page.locator('[data-open-panel="settings"]').click();
+  await expect(page.locator('#lab-sound')).toHaveAttribute('aria-pressed', 'false');
 });
