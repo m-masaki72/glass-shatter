@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#eae9e3" />
+    <title>GLASS RUSH — ガラス破壊の実験室</title>
+
+    <link rel="stylesheet" href="./styles/game.css" />
+    <script type="importmap">
+      { "imports": { "three": "./vendor/three.module.js" } }
+    </script>
+    <meta
+      name="description"
+      content="ガラスの支えを狙って削り、大きな落下と破砕を楽しむ3Dゲーム。ハンマーとピックで形を変え、最大の一撃を目指せます。"
+    />
+    <link rel="canonical" href="https://m-masaki72.github.io/glass-shatter/" />
+    <link rel="icon" type="image/svg+xml" sizes="any" href="./favicon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="stylesheet" href="./styles/site.css" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="GLASS RUSH" />
+    <meta property="og:title" content="GLASS RUSH — ガラス破壊の実験室" />
+    <meta
+      property="og:description"
+      content="ガラスの支えを狙って削り、大きな落下と破砕を楽しむ3Dゲーム。ハンマーとピックで形を変え、最大の一撃を目指せます。"
+    />
+    <meta property="og:url" content="https://m-masaki72.github.io/glass-shatter/" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:image" content="https://m-masaki72.github.io/glass-shatter/images/ogp.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="ガラスの城と落下する破片のイメージ" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://m-masaki72.github.io/glass-shatter/images/ogp.jpg" />
+    <meta name="twitter:image:alt" content="ガラスの城と落下する破片のイメージ" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "GLASS RUSH — ガラス破壊の実験室",
+        "description": "ガラスの支えを狙って削り、大きな落下と破砕を楽しむ3Dゲーム。ハンマーとピックで形を変え、最大の一撃を目指せます。",
+        "url": "https://m-masaki72.github.io/glass-shatter/",
+        "inLanguage": "ja",
+        "image": "https://m-masaki72.github.io/glass-shatter/images/ogp.jpg",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Web browser",
+        "gamePlatform": "Web browser",
+        "isAccessibleForFree": true,
+        "license": "https://github.com/m-masaki72/glass-shatter/blob/main/LICENSE"
+      }
+    </script>
+  </head>
+  <body>
+    <noscript
+      ><p role="alert">このゲームにはJavaScriptが必要です。ブラウザの設定で有効にしてください。</p></noscript
+    >
+    <div id="startup-error" role="alert" hidden>
+      <p>ゲームを開始できませんでした。WebGL対応のブラウザで再読み込みしてください。</p>
+      <a href="./index.html">再読み込み</a>
+    </div>
+    <header class="app-header" data-game-controls inert>
+      <a class="brand" href="./index.html">◈ GLASS RUSH</a>
+      <nav aria-label="ゲームのメニュー">
+        <button id="round-compose" data-open-panel="compose">形を変える</button>
+        <button data-open-panel="settings">設定</button>
+      </nav>
+    </header>
+    <main class="play-shell" data-game-controls inert>
+      <div class="heading">
+        <h1 id="stage-name">クリスタルの城門</h1>
+        <span>狙って、ひと振り。</span>
+      </div>
+      <section class="stage" aria-label="クリスタルの城門">
+        <div
+          id="crystal-viewport"
+          tabindex="0"
+          role="application"
+          aria-label="ガラス破壊。ガラスを左クリックまたはタップで打撃。空白からのドラッグ、または右ドラッグで視点移動。視点と距離はボタンでも調整可能。矢印キーで照準、スペースで打撃、1と2で道具を切り替え。"
+        ></div>
+        <button
+          class="chain-score"
+          data-open-panel="records"
+          aria-label="今回の最大の一撃と過去の記録。ランキングを開く"
+          title="その一撃を起点に、床や床につながる破片への着地で初めて割れた体積 ÷ 最初の全体積。記録を開く"
+        >
+          <small>最大の一撃</small><strong id="chain-best">0.0%</strong> <span id="record-target">記録 —</span
+          ><span class="score-arrow" aria-hidden="true">↗</span>
+          <span class="chain-track" aria-hidden="true"><span id="chain-meter"></span></span>
+        </button>
+        <button id="focus-exit" aria-label="大きく表示を戻す">表示を戻す</button>
+        <div id="shot-moment" class="shot-moment" hidden></div>
+        <span id="slow-indicator" hidden>スロー中</span>
+        <details id="view-panel">
+          <summary>視点 <span aria-hidden="true">↔</span></summary>
+          <div class="view-controls" role="group" aria-label="視点と距離。長押しで連続移動">
+            <div class="view-pad">
+              <button id="view-up" aria-label="上から見る">↑</button>
+              <button id="view-left" aria-label="左側から見る">←</button>
+              <button id="view-down" aria-label="低い位置から見る">↓</button>
+              <button id="view-right" aria-label="右側から見る">→</button>
+            </div>
+            <div class="view-zoom">
+              <button id="view-near" aria-label="近づく">＋</button>
+              <button id="view-far" aria-label="離れる">−</button>
+            </div>
+            <button id="view-home">視点を戻す</button>
+          </div>
+        </details>
+      </section>
+      <p id="shot-readout">床で砕けた分だけ記録。仕込みは自由。</p>
+      <div class="playbar">
+        <div class="tools" role="group" aria-label="道具">
+          <button data-lab-tool="hammer" aria-pressed="true" title="広く叩き欠く · 面を崩す">
+            <kbd>1</kbd><strong>ハンマー</strong>
+          </button>
+          <button data-lab-tool="pick" aria-pressed="false" title="狭く深く刺す · 支えを切る">
+            <kbd>2</kbd><strong>ピック</strong>
+          </button>
+        </div>
+        <button id="round-retry" title="同じ形でもう一度 · R">↻ もう一度</button>
+      </div>
+      <div class="contact-readout">
+        <p id="aim-readout" aria-label="狙っている部品と打撃角度" hidden></p>
+        <p id="lab-status" role="status">クリスタルを準備しています…</p>
+      </div>
+    </main>
+
+    <dialog data-game-controls inert id="compose-panel" class="panel" aria-labelledby="compose-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">NEXT SHAPE</p>
+          <h2 id="compose-title">今日は、何を壊す？</h2>
+        </div>
+        <button class="panel-close" data-close-panel aria-label="形の選択を閉じる">×</button>
+      </div>
+      <form id="stage-composer" class="stage-composer">
+        <label for="stage-prompt">言葉でつくる</label>
+        <div class="prompt-row">
+          <input
+            id="stage-prompt"
+            name="prompt"
+            maxlength="100"
+            value="透明なガラスの城"
+            placeholder="例：大きな青いガラスのビルを3つ"
+            aria-describedby="stage-message stage-capabilities"
+            autocomplete="off"
+          />
+          <button id="stage-generate" type="submit" disabled>つくる ↗</button>
+        </div>
+        <p id="stage-capabilities">ガラス専用。色・大きさ・個数（1〜5）を指定できます。</p>
+        <p class="field-label">形から選ぶ</p>
+        <div id="stage-presets" class="stage-presets" role="group" aria-label="形の候補"></div>
+        <p class="composer-note">
+          新しい試作は「連鎖シャンデリア」「切り残しの門」。既存の形も含め、21種類から選べます。
+        </p>
+        <p id="stage-message" role="status">入力するか、形を選んでください。</p>
+      </form>
+    </dialog>
+
+    <dialog data-game-controls inert id="records-panel" class="panel" aria-labelledby="records-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">PERSONAL BEST</p>
+          <h2 id="records-title">最大の一撃 · TOP 5</h2>
+        </div>
+        <button class="panel-close" data-close-panel aria-label="記録を閉じる">×</button>
+      </div>
+      <section id="round-summary" class="round-summary" aria-label="最大の一撃ランキング">
+        <div class="ranking-results">
+          <p class="score-rule">床で割れた体積 ÷ 最初の全体積</p>
+          <p id="ranking-empty">まだ記録はありません。まずはひと振り。</p>
+          <ol id="shot-ranking"></ol>
+          <small id="ranking-save"></small>
+        </div>
+        <details class="panel-details">
+          <summary>記録のしくみ</summary>
+          <p>
+            その一撃を起点に、床や床につながる破片の山への着地で実際に割れたガラスの体積を、最初の全体積に対する割合で評価します。滑っただけ、空中で割れただけ、同じ破片の再破砕では加点しません。仕込みは自由です。
+          </p>
+          <p>
+            打ち返した破片からの新たな破砕は、打ち返した一撃へ帰属します。1回の挑戦から最大の一撃だけを残し、同じ形・サイズ・個数で比較します。旧「崩落率」の記録とは別集計です。
+          </p>
+        </details>
+      </section>
+    </dialog>
+
+    <dialog data-game-controls inert id="settings-panel" class="panel" aria-labelledby="settings-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">MAKE YOURSELF AT HOME</p>
+          <h2 id="settings-title">設定と遊び方</h2>
+        </div>
+        <button class="panel-close" data-close-panel aria-label="設定を閉じる">×</button>
+      </div>
+      <div class="settings-controls">
+        <div class="setting-row">
+          <span>サウンド</span><button id="lab-sound" aria-pressed="true">音 ON</button>
+        </div>
+        <label class="setting-row" for="lab-volume"
+          >音量 <input id="lab-volume" type="range" min="0" max="70" value="45"
+        /></label>
+        <div class="setting-row">
+          <span>氷のアンビエント</span><button id="lab-music" aria-pressed="true">BGM ON</button>
+        </div>
+        <div class="setting-row">
+          <span>ゆっくり眺める</span><button id="lab-slow" aria-pressed="false">スロー</button>
+        </div>
+        <div class="setting-row">
+          <span>画面を広く使う</span><button id="lab-focus" aria-pressed="false">大きく表示</button>
+        </div>
+      </div>
+      <details class="play-help panel-details" open>
+        <summary>操作と遊び方</summary>
+        <p>
+          左クリック／タップで一撃。マウスを重ねると、道具の構えと実際に当たる面を表示します。長押しで強くはなりません。
+        </p>
+        <p>
+          ハンマーは平らな端面で広く叩き欠き、ピックは長い先端を向けて狭く深く削ります。1でハンマー、2でピックです。
+        </p>
+        <p>
+          空白からのドラッグ、または右ドラッグで360度の視点移動。空白から始めたドラッグは、途中でガラスに重なっても打撃しません。「視点」の矢印と＋／−でも調整できます。「視点を戻す」はガラスを壊さず視点だけ戻します。
+        </p>
+        <p>
+          ガラスの画面にフォーカス中：矢印で照準、Spaceで打撃、Rでもう一度、Sでスロー、Mでミュート。大きく表示はEscで戻れます。
+        </p>
+      </details>
+      <details class="panel-details">
+        <summary>この形のヒント</summary>
+        <p id="stage-hint">狙う → 欠く → 支えを失ったガラスが落ちる</p>
+        <p>
+          薄い断面は貫通を狙い、厚い部分は縁を欠き、細い支えを断って上の重さを落下へつなげよう。構造標本では、薄板・厚板・太いブロック・細長い支柱を比べられます。
+        </p>
+        <p>マウスを重ねると、狙う部品と打点の残り厚さの目安を表示します。</p>
+      </details>
+      <details class="panel-details">
+        <summary>試作について</summary>
+        <p class="about-title">壊すのが、惜しい。</p>
+        <p>
+          BEAUTIFUL THINGS BREAK DIFFERENTLY.<br />CRYSTAL STUDY / 01 · LEAD-FREE CRYSTAL · REAL-TIME FRACTURE
+        </p>
+        <p>
+          立体を打点で切り分け、残った形で衝突を再計算。支えを失った部分は落下し、衝突で再び割れます。細片は退出し、大きな塊は追撃できます。材料の厳密な応力解析ではなく、破壊仕事と接続面積による近似です。音は衝突量・破片の大きさに連動したモード合成。外部録音素材は使用していません。
+        </p>
+        <p id="lab-stats"></p>
+      </details>
+    </dialog>
+    <script type="module" src="./js/game-bootstrap.js"></script>
+    <footer class="site-share" aria-label="ゲームを共有">
+      <span>共有する</span
+      ><a
+        href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fm-masaki72.github.io%2Fglass-shatter%2F&amp;text=GLASS+RUSH+%E2%80%94+%E3%82%AC%E3%83%A9%E3%82%B9%E7%A0%B4%E5%A3%8A%E3%81%AE%E5%AE%9F%E9%A8%93%E5%AE%A4"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Xで共有（新しいタブで開く）"
+        >X ↗</a
+      >
+      <a
+        href="https://social-plugins.line.me/lineit/share?url=https%3A%2F%2Fm-masaki72.github.io%2Fglass-shatter%2F"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="LINEで共有（新しいタブで開く）"
+        >LINE ↗</a
+      >
+      <button id="clear-saved-data">保存データを消す</button><button id="copy-link">URLをコピー</button
+      ><input
+        id="share-url"
+        aria-label="共有するURL"
+        value="https://m-masaki72.github.io/glass-shatter/"
+        readonly
+        hidden
+      />
+      <a href="https://github.com/m-masaki72/glass-shatter" target="_blank" rel="noopener noreferrer"
+        >GitHub ↗</a
+      >
+      <p id="share-status" role="status"></p>
+    </footer>
+    <script type="module" src="./js/site-share.js"></script>
+  </body>
+</html>
